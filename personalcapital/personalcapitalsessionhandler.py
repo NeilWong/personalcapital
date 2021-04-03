@@ -1,6 +1,10 @@
-from .personalcapital import PersonalCapital, RequireTwoFactorException
 import json
 import logging
+
+from .personalcapital import PersonalCapital, RequireTwoFactorException
+from .exceptions import (
+    LoginFailedException
+)
 
 class PersonalCapitalSessionHandler(PersonalCapital):
     """
@@ -12,11 +16,11 @@ class PersonalCapitalSessionHandler(PersonalCapital):
         self.__session_file = 'session.json'
 
     def start_session(self):
-        self.load_session()
         try:
             self.login()
-        except RequireTwoFactorException:
-            self.authenticate_login()
+        except LoginFailedException:
+            raise LoginFailedException('Personal Capital session failed to start')
+            #print("login failed")
 
     def load_session(self):
         try:

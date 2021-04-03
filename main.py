@@ -1,4 +1,7 @@
-from personalcapital import PersonalCapital, PersonalCapitalSessionHandler, RequireTwoFactorException, TwoFactorVerificationModeEnum
+from personalcapital import (
+    PersonalCapitalSessionHandler
+)
+
 from datetime import datetime, timedelta
 
 #https://stackoverflow.com/questions/29987840/how-to-execute-python-code-from-within-visual-studio-code
@@ -8,6 +11,7 @@ if hasattr(__builtins__, 'raw_input'):
 
 def main():
     pc = PersonalCapitalSessionHandler()
+    pc.load_session()
     pc.start_session()
 
     get_sample_response(pc)
