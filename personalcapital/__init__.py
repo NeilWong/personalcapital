@@ -1,1 +1,2 @@
 from .personalcapital import PersonalCapital, RequireTwoFactorException, TwoFactorVerificationModeEnum
+from .personalcapitalsessionhandler import PersonalCapitalSessionHandler

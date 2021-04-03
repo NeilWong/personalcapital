@@ -1,46 +1,10 @@
-from personalcapital import PersonalCapital, RequireTwoFactorException, TwoFactorVerificationModeEnum
-import getpass
-import json
-import logging
-import os
+from personalcapital import PersonalCapital, PersonalCapitalSessionHandler, RequireTwoFactorException, TwoFactorVerificationModeEnum
 from datetime import datetime, timedelta
 
 #https://stackoverflow.com/questions/29987840/how-to-execute-python-code-from-within-visual-studio-code
 # Python 2 and 3 compatibility
 if hasattr(__builtins__, 'raw_input'):
     input = raw_input
-
-class PersonalCapitalSessionHandler(PersonalCapital):
-    """
-    Extends PersonalCapital to save and load session
-    So that it doesn't require 2-factor auth every time
-    """
-    def __init__(self):
-        PersonalCapital.__init__(self)
-        self.__session_file = 'session.json'
-
-    def start_session(self):
-        self.load_session()
-        try:
-            self.login()
-        except RequireTwoFactorException:
-            self.authenticate_login()
-
-    def load_session(self):
-        try:
-            with open(self.__session_file) as data_file:    
-                cookies = {}
-                try:
-                    cookies = json.load(data_file)
-                except ValueError as err:
-                    logging.error(err)
-                self.set_session(cookies)
-        except IOError as err:
-            logging.error(err)
-
-    def save_session(self):
-        with open(self.__session_file, 'w') as data_file:
-            data_file.write(json.dumps(self.get_session()))
 
 def main():
     pc = PersonalCapitalSessionHandler()
