@@ -5,11 +5,12 @@ import logging
 import os
 from datetime import datetime, timedelta
 
+#https://stackoverflow.com/questions/29987840/how-to-execute-python-code-from-within-visual-studio-code
 # Python 2 and 3 compatibility
 if hasattr(__builtins__, 'raw_input'):
     input = raw_input
 
-class PewCapital(PersonalCapital):
+class PersonalCapitalSessionHandler(PersonalCapital):
     """
     Extends PersonalCapital to save and load session
     So that it doesn't require 2-factor auth every time
@@ -17,6 +18,13 @@ class PewCapital(PersonalCapital):
     def __init__(self):
         PersonalCapital.__init__(self)
         self.__session_file = 'session.json'
+
+    def start_session(self):
+        self.load_session()
+        try:
+            self.login()
+        except RequireTwoFactorException:
+            self.authenticate_login()
 
     def load_session(self):
         try:
@@ -34,33 +42,17 @@ class PewCapital(PersonalCapital):
         with open(self.__session_file, 'w') as data_file:
             data_file.write(json.dumps(self.get_session()))
 
-def get_email():
-    email = os.getenv('PEW_EMAIL')
-    if not email:
-        print('You can set the environment variables for PEW_EMAIL and PEW_PASSWORD so the prompts don\'t come up every time')
-        return input('Enter email:')
-    return email
-
-def get_password():
-    password = os.getenv('PEW_PASSWORD')
-    if not password:
-        return getpass.getpass('Enter password:')
-    return password
-
 def main():
-    email, password = get_email(), get_password()
-    pc = PewCapital()
-    pc.load_session()
+    pc = PersonalCapitalSessionHandler()
+    pc.start_session()
 
-    try:
-        pc.login(email, password)
-    except RequireTwoFactorException:
-        pc.two_factor_challenge(TwoFactorVerificationModeEnum.SMS)
-        pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, input('code: '))
-        pc.authenticate_password(password)
+    get_sample_response(pc)
 
+    pc.save_session()
+
+def get_sample_response(pc: PersonalCapitalSessionHandler):
     accounts_response = pc.fetch('/newaccount/getAccounts')
-    
+
     now = datetime.now()
     date_format = '%Y-%m-%d'
     days = 90
@@ -75,13 +67,11 @@ def main():
         'endDate': end_date,
         'component': 'DATAGRID'
     })
-    pc.save_session()
-
     accounts = accounts_response.json()['spData']
     print('Networth: {0}'.format(accounts['networth']))
 
-    transactions = transactions_response.json()['spData']
-    print('Number of transactions between {0} and {1}: {2}'.format(transactions['startDate'], transactions['endDate'], len(transactions['transactions'])))
+    # transactions = transactions_response.json()['spData']
+    # print('Number of transactions between {0} and {1}: {2}'.format(transactions['startDate'], transactions['endDate'], len(transactions['transactions'])))
 
 if __name__ == '__main__':
     main()

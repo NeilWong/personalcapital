@@ -1,6 +1,8 @@
 import requests
 import re
+from dotenv import dotenv_values
 
+config = dotenv_values(".env")
 csrf_regexp = re.compile(r"globals.csrf='([a-f0-9-]+)'")
 base_url = 'https://home.personalcapital.com'
 api_endpoint = base_url + '/api'
@@ -34,26 +36,38 @@ class RequireTwoFactorException(Exception):
     pass
 
 class LoginFailedException(Exception):
-    pass
+    print('Exception')
 
 class PersonalCapital(object):
     def __init__(self):
         self.__session = requests.Session()
         self.__csrf = ""
 
-    def login(self, username, password):
-        initial_csrf = self.__get_csrf_from_home_page(base_url)
-        csrf, auth_level = self.__identify_user(username, initial_csrf)
+    def login(self):
+        try:
+            self.init_csrf()
+            self.authenticate_login()
+        except ValueError:
+            raise LoginFailedException('invalid csrf and/or auth_level during login')
 
-        if csrf and auth_level:
-            self.__csrf = csrf
-            if auth_level != AuthLevelEnum.USER_REMEMBERED:
-                raise RequireTwoFactorException()
-            result = self.__authenticate_password(password).json()
-            if getSpHeaderValue(result, SUCCESS_KEY) == False:
-                raise LoginFailedException(getErrorValue(result))
-        else:
-            raise LoginFailedException()
+    def init_csrf(self):
+        email = self.get_email()
+        initial_csrf = self.__get_csrf_from_home_page(base_url)
+        csrf, auth_level = self.__identify_user(email, initial_csrf)
+        self.set_csrf(csrf)
+
+    def check_authentication(self):
+        #if auth_level != AuthLevelEnum.USER_REMEMBERED:  #remove these comments if PC account has MFA disabled
+        raise RequireTwoFactorException()
+        result = self.__authenticate_password(password).json()
+        if getSpHeaderValue(result, SUCCESS_KEY) == False:
+            raise LoginFailedException(getErrorValue(result))
+
+    def authenticate_login(self):
+        self.two_factor_challenge(TwoFactorVerificationModeEnum.SMS)
+        self.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, input('code: '))
+        password = self.get_password()
+        self.__authenticate_password(password)
 
     def authenticate_password(self, password):
         return self.__authenticate_password(password)
@@ -88,20 +102,29 @@ class PersonalCapital(object):
         response = self.__session.post(api_endpoint + endpoint, data)
         return response
 
-    def get_session(self):
-        """
-        return cookies as a dictionary
-        """
+    def get_email(self):
+        email = config['EMAIL']
+        if not email:
+            print('You can set the environment variables for PEW_EMAIL and PEW_PASSWORD so the prompts don\'t come up every time')
+            return input('Enter email:')
+        return email
+
+    def get_password(self):
+        password = config['PASSWORD']
+        if not password:
+            return getpass.getpass('Enter password:')
+        return password
+
+    def get_session(self) -> dict:
         return requests.utils.dict_from_cookiejar(self.__session.cookies)
 
     def set_session(self, cookies):
-        """
-        sets the cookies (should be a dictionary)
-        """
         self.__session.cookies = requests.utils.cookiejar_from_dict(cookies)
-
+        
+    def set_csrf(self, csrf):
+        self.__csrf = csrf
+        
     # private methods
-
 
     def __get_csrf_from_home_page(self, url):
         r = self.__session.get(url)
