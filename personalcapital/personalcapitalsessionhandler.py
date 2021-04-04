@@ -20,7 +20,6 @@ class PersonalCapitalSessionHandler(PersonalCapital):
             self.login()
         except LoginFailedException:
             raise LoginFailedException('Personal Capital session failed to start')
-            #print("login failed")
 
     def load_session(self):
         try:

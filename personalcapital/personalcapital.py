@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 
 from .exceptions import (
     LoginFailedException,
-    RequireTwoFactorException
+    RequireTwoFactorException,
+    TwoFactorException
 )
 
 load_dotenv()
@@ -16,6 +17,7 @@ csrf_regexp = re.compile(r"globals.csrf='([a-f0-9-]+)'")
 
 class AuthLevelEnum(object):
     USER_REMEMBERED = "USER_REMEMBERED"
+    MFA_REQUIRED = "MFA_REQUIRED"
     NONE = "NONE"
 
 class TwoFactorVerificationModeEnum(object):
@@ -106,8 +108,6 @@ class PersonalCapital(object):
 
         if (auth_level == AuthLevelEnum.NONE):
             raise LoginFailedException('User email is not valid')
-        elif (auth_level != AuthLevelEnum.USER_REMEMBERED):
-            raise RequireTwoFactorException
 
     def __get_email(self):
         email = os.getenv('EMAIL')
@@ -152,8 +152,11 @@ class PersonalCapital(object):
     def __enter_user_password(self):
         password = self.__get_password()
         result = self.__authenticate_password(password).json()
+
         if self.__get_sp_header_value(result, PersonalCapital.SUCCESS_KEY) == False:
             raise LoginFailedException(getErrorValue(result))
+        elif self.__get_sp_header_value(result, PersonalCapital.AUTH_LEVEL_KEY) == AuthLevelEnum.MFA_REQUIRED:
+            raise RequireTwoFactorException
 
     def __get_password(self):
         password = os.getenv('PASSWORD')
@@ -188,6 +191,22 @@ class PersonalCapital(object):
         except (ValueError, IndexError):
             return None
 
+    def __challenge_email(self):
+        data = self.__generate_challenge_payload("challengeEmail")
+        return self.post("/credential/challengeEmail", data)
+
+    def __authenticate_email(self, code):
+        data = self.__generate_authentication_payload(code)
+        return self.post("/credential/authenticateEmailByCode", data)
+
+    def __challenge_sms(self):
+        data = self.__generate_challenge_payload("challengeSMS")
+        return self.post("/credential/challengeSms", data)
+
+    def __authenticate_sms(self, code):
+        data = self.__generate_authentication_payload(code)
+        return self.post("/credential/authenticateSms", data)
+
     def __generate_challenge_payload(self, challenge_type):
         return {
             "challengeReason": "DEVICE_AUTH",
@@ -207,19 +226,3 @@ class PersonalCapital(object):
             "code": code,
             "csrf": self.__csrf
         }
-
-    def __challenge_email(self):
-        data = self.__generate_challenge_payload("challengeEmail")
-        return self.post("/credential/challengeEmail", data)
-
-    def __authenticate_email(self, code):
-        data = self.__generate_authentication_payload(code)
-        return self.post("/credential/authenticateEmailByCode", data)
-
-    def __challenge_sms(self):
-        data = self.__generate_challenge_payload("challengeSMS")
-        return self.post("/credential/challengeSms", data)
-
-    def __authenticate_sms(self, code):
-        data = self.__generate_authentication_payload(code)
-        return self.post("/credential/authenticateSms", data)

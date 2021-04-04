@@ -3,3 +3,6 @@ class LoginFailedException(Exception):
     
 class RequireTwoFactorException(Exception):
     pass
+
+class TwoFactorException(Exception):
+    pass
