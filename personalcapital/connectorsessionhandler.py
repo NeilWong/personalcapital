@@ -1,9 +1,6 @@
 import json
 import logging
 
-from .client import (
-    Client
-)
 from .exceptions import (
     LoginFailedException
 )
@@ -20,12 +17,10 @@ class ConnectorSessionHandler(Connector):
     def __init__(self):
         Connector.__init__(self)
         self.__session_file = 'session.json'
-        self.client = Client(self.get_session())
 
     def start_session(self):
         try:
             self.login()
-            self.client.start_client()
         except LoginFailedException:
             raise LoginFailedException('Personal Capital session failed to start')
 

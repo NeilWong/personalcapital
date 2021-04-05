@@ -1,1 +1,1 @@
-from .connectorsessionhandler import ConnectorSessionHandler
+from .client import Client
