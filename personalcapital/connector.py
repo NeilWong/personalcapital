@@ -24,7 +24,7 @@ class TwoFactorVerificationModeEnum(object):
     SMS = 0
     EMAIL = 1
 
-class PersonalCapital(object):
+class Connector(object):
 
     SP_HEADER_KEY = "spHeader"
     SUCCESS_KEY = "success"
@@ -79,7 +79,7 @@ class PersonalCapital(object):
         return self.post(endpoint, payload)
 
     def post(self, endpoint, data):
-        response = self.__session.post(PersonalCapital.BASE_URL + PersonalCapital.API_ENDPOINT + endpoint, data)
+        response = self.__session.post(Connector.BASE_URL + Connector.API_ENDPOINT + endpoint, data)
         return response
 
     def get_session(self) -> dict:
@@ -102,7 +102,7 @@ class PersonalCapital(object):
 
     def __enter_user_email(self):
         email = self.__get_email()
-        initial_csrf = self.__get_csrf_from_home_page(PersonalCapital.BASE_URL)
+        initial_csrf = self.__get_csrf_from_home_page(Connector.BASE_URL)
         final_csrf, auth_level = self.__identify_user(email, initial_csrf)
         self.set_csrf(final_csrf)
 
@@ -143,8 +143,8 @@ class PersonalCapital(object):
 
         if r.status_code == requests.codes.ok:
             result = r.json()
-            new_csrf = self.__get_sp_header_value(result, PersonalCapital.CSRF_KEY)
-            auth_level = self.__get_sp_header_value(result, PersonalCapital.AUTH_LEVEL_KEY)
+            new_csrf = self.__get_sp_header_value(result, Connector.CSRF_KEY)
+            auth_level = self.__get_sp_header_value(result, Connector.AUTH_LEVEL_KEY)
             return (new_csrf, auth_level)
 
         return (None, None)
@@ -153,9 +153,9 @@ class PersonalCapital(object):
         password = self.__get_password()
         result = self.__authenticate_password(password).json()
 
-        if self.__get_sp_header_value(result, PersonalCapital.SUCCESS_KEY) == False:
+        if self.__get_sp_header_value(result, Connector.SUCCESS_KEY) == False:
             raise LoginFailedException(getErrorValue(result))
-        elif self.__get_sp_header_value(result, PersonalCapital.AUTH_LEVEL_KEY) == AuthLevelEnum.MFA_REQUIRED:
+        elif self.__get_sp_header_value(result, Connector.AUTH_LEVEL_KEY) == AuthLevelEnum.MFA_REQUIRED:
             raise RequireTwoFactorException
 
     def __get_password(self):
@@ -180,14 +180,14 @@ class PersonalCapital(object):
 
     @classmethod
     def __get_sp_header_value(cls, result, valueKey):
-        if (PersonalCapital.SP_HEADER_KEY in result) and (valueKey in result[PersonalCapital.SP_HEADER_KEY]):
-            return result[PersonalCapital.SP_HEADER_KEY][valueKey]
+        if (Connector.SP_HEADER_KEY in result) and (valueKey in result[Connector.SP_HEADER_KEY]):
+            return result[Connector.SP_HEADER_KEY][valueKey]
         return None
 
     @classmethod
     def __get_error_value(cls, result):
         try:
-            return cls.__get_sp_header_value(result, PersonalCapital.ERRORS_KEY)[0]['message']
+            return cls.__get_sp_header_value(result, Connector.ERRORS_KEY)[0]['message']
         except (ValueError, IndexError):
             return None
 

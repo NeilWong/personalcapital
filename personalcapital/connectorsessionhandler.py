@@ -1,23 +1,31 @@
 import json
 import logging
 
-from .personalcapital import PersonalCapital, RequireTwoFactorException
+from .client import (
+    Client
+)
 from .exceptions import (
     LoginFailedException
 )
+from .connector import (
+    Connector, 
+    RequireTwoFactorException
+)
 
-class PersonalCapitalSessionHandler(PersonalCapital):
+class ConnectorSessionHandler(Connector):
     """
     Extends PersonalCapital to save and load session
     So that it doesn't require 2-factor auth every time
     """
     def __init__(self):
-        PersonalCapital.__init__(self)
+        Connector.__init__(self)
         self.__session_file = 'session.json'
+        self.client = Client(self.get_session())
 
     def start_session(self):
         try:
             self.login()
+            self.client.start_client()
         except LoginFailedException:
             raise LoginFailedException('Personal Capital session failed to start')
 

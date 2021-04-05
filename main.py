@@ -1,5 +1,5 @@
 from personalcapital import (
-    PersonalCapitalSessionHandler
+    ConnectorSessionHandler
 )
 
 from datetime import datetime, timedelta
@@ -10,7 +10,7 @@ if hasattr(__builtins__, 'raw_input'):
     input = raw_input
 
 def main():
-    pc = PersonalCapitalSessionHandler()
+    pc = ConnectorSessionHandler()
     pc.load_session()
     pc.start_session()
 
@@ -18,7 +18,7 @@ def main():
 
     pc.save_session()
 
-def get_sample_response(pc: PersonalCapitalSessionHandler):
+def get_sample_response(pc: ConnectorSessionHandler):
     accounts_response = pc.fetch('/newaccount/getAccounts')
 
     now = datetime.now()
