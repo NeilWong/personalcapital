@@ -4,6 +4,12 @@ from datetime import (
 from .connectorsessionhandler import (
     ConnectorSessionHandler
 )
+from .etl import (
+    get_accounts,
+    get_transactions,
+    get_categories,
+    get_spending
+)
 
 class Client():
 
@@ -12,10 +18,10 @@ class Client():
         self.session_active = True
 
     def start_client(self) -> None:
-        print('startinf client')
         self.session.load_session()
         self.session.start_session()
         self.get_sample_response(self.session)
+
         while self.session_active:
             cmd = input('$: ')
             self.process_cmd(cmd)
@@ -23,11 +29,22 @@ class Client():
         self.session.save_session()
 
     def process_cmd(self, cmd) -> None:
-        if cmd == 'exit':
-            self.__set_session_active(False)
-
-    def __set_session_active(self, state):
-        self.session_active = state
+        if cmd == 'help': 
+            print('List of available commands: help, exit, view accounts, view transactions, view categories, view spending...')
+        elif cmd == 'exit':
+            self.end_session()
+        elif cmd == 'view accounts':
+            get_accounts(self.session)
+        elif cmd == 'view transactions':
+            get_transactions(self.session)
+        elif cmd == 'view categories':
+            get_categories(self.session)
+        elif cmd == 'view spending':
+            get_spending(self.session)
+        
+    def end_session(self):
+        self.session_active = False
+        print('Exiting session...')
         
     def get_sample_response(self, pc: ConnectorSessionHandler):
         accounts_response = pc.fetch('/newaccount/getAccounts')

@@ -23,14 +23,34 @@
     # Average monthly costs across different categories
 
 def get_accounts(session):
-    print("get_accoutns_summary")
+    data = get_data(session, '/newaccount/getAccounts2')
+
+    accounts = data.json()['spData']
+    #print('Networth: {0}'.format(accounts['networth']))
+    print(accounts)
 
 def get_transactions(session):
-    print("get_transactions")
+    data = get_data(session, '/transaction/getUserTransactions')
+
+    transactions = data.json()['spData']
+    print(transactions)
 
 def get_categories(session):
-    pass
+    data = get_data(session, '/transactioncategory/getCategories')
+    print(data)
+    categories = data.json()['spData']
+    print(categories)
 
 def get_spending(session):
-    print("spending")
+    data = get_data(session, '/account/getUserSpending')
+    spending = data['spData']
+    print(spending)
 
+def get_data(session, endpoint):
+    response = session.fetch(endpoint)
+    if is_valid_response(response, endpoint):
+        return response.json()
+    else:
+        raise ValueError('Request for ' + endpoint + ' data failed with error: ' + str(response.status_code))
+def is_valid_response(response, endpoint):
+    return response.status_code == 200
